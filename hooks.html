@@ -1,0 +1,96 @@
+<div id="app"></div>
+
+<script>
+let globalHooks;
+function useState(defaultValue) {
+  let hookData = globalHooks.get(useState);
+
+  if (!hookData) hookData = { calls: 0, store: [] };
+
+  if (hookData.store[hookData.calls] === undefined)
+    hookData.store[hookData.calls] = defaultValue;
+
+  let value = hookData.store[hookData.calls];
+
+  let calls = hookData.calls;
+  let setValue = function(newValue) {
+    hookData.store[calls] = newValue;
+    hookData.render();
+  };
+
+  hookData.calls += 1;
+  globalHooks.set(useState, hookData);
+
+  return [value, setValue];
+}
+
+function NumberButton() {
+  let [valueA, setValueA] = useState(0);
+  let [valueB, setValueB] = useState(100);
+
+  return {
+    type: "button",
+    props: {
+      children: `A:${valueA} B:${valueB}`,
+      onClick() {
+        setValueA(valueA + 1);
+        setValueB(valueB - 1);
+      }
+    }
+  };
+}
+
+function TextButton() {
+  let [valueC, setValueC] = useState("hello");
+  let [valueD, setValueD] = useState("world");
+
+  return {
+    type: "button",
+    props: {
+      children: `C:${valueC} D:${valueD}`,
+      onClick() {
+        setValueC("bye");
+        setValueD("moon");
+      }
+    }
+  };
+}
+
+let target = document.getElementById("app");
+run([NumberButton, TextButton], target);
+
+function run(components, target) {
+  let savedHooks = new Map();
+  render();
+
+  function render() {
+    target.innerHTML = "";
+    components.forEach(function(component) {
+      globalHooks = savedHooks.get(component);
+
+      if (!globalHooks) globalHooks = new Map();
+
+      renderToDom(component, target);
+
+      for (let [id, hookData] of globalHooks.entries()) {
+        hookData.calls = 0;
+        hookData.render = render;
+      }
+
+      savedHooks.set(component, globalHooks);
+
+      globalHooks = null;
+    });
+  }
+}
+
+function renderToDom(component, target) {
+  let { props, type } = component();
+
+  let element = document.createElement(type);
+  element.innerHTML = props.children;
+  element.onclick = props.onClick;
+  target.appendChild(element);
+}
+
+</script>
