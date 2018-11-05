@@ -4,7 +4,6 @@
 let globalHooks;
 function useState(defaultValue) {
   let hookData = globalHooks.get(useState);
-
   if (!hookData) hookData = { calls: 0, store: [] };
 
   if (hookData.store[hookData.calls] === undefined)
@@ -65,8 +64,8 @@ function run(components, target) {
 
   function render() {
     target.innerHTML = "";
-    components.forEach(function(component) {
-      globalHooks = savedHooks.get(component);
+    components.forEach(function(component, index) {
+      globalHooks = savedHooks.get(index);
 
       if (!globalHooks) globalHooks = new Map();
 
@@ -77,7 +76,7 @@ function run(components, target) {
         hookData.render = render;
       }
 
-      savedHooks.set(component, globalHooks);
+      savedHooks.set(index, globalHooks);
 
       globalHooks = null;
     });
